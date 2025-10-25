@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Controller // Marca esta clase como controlador MVC de Spring
 @RequestMapping(value = {"/agenda", "/"}) // Define la ruta base para todas las peticiones
@@ -67,8 +68,16 @@ public class AgendaController {
         logger.info("Listando eventos agrupados por fecha");
 
         Map<LocalDate, List<Evento>> eventosAgrupados = agendaService.agruparPorFecha();
+        // Convertimos las claves LocalDate a String formateado para corregir error en JSP
+        Map<String, List<Evento>> eventosAgrupadosFormateados = new TreeMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        model.addAttribute("eventosAgrupados", eventosAgrupados);
+        eventosAgrupados.forEach((fecha, listaEventos) -> {
+            eventosAgrupadosFormateados.put(fecha.format(formatter), listaEventos);
+        });
+
+        model.addAttribute("eventosAgrupados", eventosAgrupadosFormateados);
+        //model.addAttribute("eventosAgrupados", eventosAgrupados);
         model.addAttribute("titulo", "Agenda de Eventos");
         model.addAttribute("totalEventos", agendaService.contarEventos());
 
