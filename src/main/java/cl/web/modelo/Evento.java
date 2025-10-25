@@ -13,10 +13,14 @@ import java.time.LocalDate;
 @Data // Genera getters, setters, toString, equals
 @NoArgsConstructor // Genera constructor vacío
 @AllArgsConstructor // Genera constructor con todos los parámetros
-@Component // Marca esta clase como bean de Spring
+//@Component // Marca esta clase como bean de Spring
 public class Evento {
 
-    @NotEmpty(message = "El título es obligatorio")
+    public Evento(String string, LocalDate now, String string2, String string3) {
+		// TODO Auto-generated constructor stub
+	}
+
+	@NotEmpty(message = "El título es obligatorio")
     private String titulo;
 
     @NotNull(message = "La fecha es obligatoria")
@@ -27,4 +31,15 @@ public class Evento {
 
     @NotEmpty(message = "El responsable es obligatorio")
     private String responsable;
+
+	public Object getTitulo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public LocalDate getFecha() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
+

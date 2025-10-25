@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller // Marca esta clase como controlador MVC de Spring
-@RequestMapping("/agenda") // Define la ruta base para todas las peticiones
+@RequestMapping(value = {"/agenda", "/"}) // Define la ruta base para todas las peticiones
 public class AgendaController {
 
     private static final Logger logger = LoggerFactory.getLogger(AgendaController.class);
