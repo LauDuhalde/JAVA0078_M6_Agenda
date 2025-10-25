@@ -1,18 +1,21 @@
 package cl.web.service;
 
-import cl.web.modelo.Contacto;
+import cl.web.modelo.Evento;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @Service
 public interface AgendaService {
-    boolean registrar(Contacto contacto);
+    boolean agregarEvento(Evento evento);
 
-    List<Contacto> listar();
+    List<Evento> listarEventos();
 
-    Optional<Contacto> buscarPorNombre(String nombre);
+    List<Evento> buscarPorFecha(LocalDate fecha);
 
-    int contarContactos();
+    Map<LocalDate, List<Evento>> agruparPorFecha();
+
+    int contarEventos();
 }

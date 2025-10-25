@@ -1,6 +1,6 @@
 package cl.web.controller;
 
-import cl.web.modelo.Contacto;
+import cl.web.modelo.Evento;
 import cl.web.service.AgendaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,112 +8,105 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
-/*
-* Clase que representa el controlador de la vista de contactos.
-* La anotacion @Controller indica que esta clase es un bean de spring.
-* @requestmapping indica que esta clase es un controlador para la ruta /contactos.
-* @autowired indica que esta clase necesita autowired para inyectar dependencias.
-* @Get, Post, Put, Delete indican que los metodos son de tipo rest.
- */
+import java.util.Map;
 
-
-@Controller
-@RequestMapping("/contactos")
+@Controller // Marca esta clase como controlador MVC de Spring
+@RequestMapping("/agenda") // Define la ruta base para todas las peticiones
 public class AgendaController {
+
     private static final Logger logger = LoggerFactory.getLogger(AgendaController.class);
 
-    @Autowired
+    @Autowired // Inyección automática de dependencias por Spring
     private AgendaService agendaService;
 
-    @GetMapping("/nuevo")
+    @GetMapping("/nuevo") // Mapea peticiones GET a /agenda/nuevo
     public String mostrarFormulario(Model model) {
-        logger.info("Mostrando formulario de nuevo contacto");
-        model.addAttribute("contacto", new Contacto());
-        model.addAttribute("titulo", "Registrar Nuevo Contacto");
+        logger.info("Mostrando formulario de nuevo evento");
+        model.addAttribute("evento", new Evento());
+        model.addAttribute("titulo", "Registrar Nuevo Evento");
         return "form";
     }
 
-    @PostMapping("/guardar")
-    public String guardarContacto(@Valid @ModelAttribute("contacto") Contacto contacto,
-                                  BindingResult result,
-                                  RedirectAttributes redirectAttributes,
-                                  Model model) {
+    @PostMapping("/guardar") // Mapea peticiones POST a /agenda/guardar
+    public String guardarEvento(@Valid @ModelAttribute("evento") Evento evento, // @Valid activa validaciones
+                                BindingResult result, // Captura errores de validación
+                                RedirectAttributes redirectAttributes,
+                                Model model) {
 
-        logger.info("Intentando guardar contacto: {}", contacto.getNombre());
+        logger.info("Intentando guardar evento: {}", evento.getTitulo());
 
         if (result.hasErrors()) {
-            logger.warn("Errores de validación al guardar contacto");
-            model.addAttribute("titulo", "Registrar Nuevo Contacto");
+            logger.warn("Errores de validación al guardar evento");
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
             return "form";
         }
 
-        boolean registrado = agendaService.registrar(contacto);
+        boolean agregado = agendaService.agregarEvento(evento);
 
-        if (registrado) {
-            redirectAttributes.addFlashAttribute("mensaje", "Contacto registrado exitosamente");
+        if (agregado) {
+            redirectAttributes.addFlashAttribute("mensaje", "Evento registrado exitosamente");
             redirectAttributes.addFlashAttribute("tipoMensaje", "success");
-            logger.info("Contacto guardado exitosamente: {}", contacto.getNombre());
-            return "redirect:/contactos/listar";
+            logger.info("Evento guardado: {}", evento.getTitulo());
+            return "redirect:/agenda/listar";
         } else {
-            model.addAttribute("titulo", "Registrar Nuevo Contacto");
-            model.addAttribute("error", "No se pudo registrar el contacto. Es posible que el correo ya esté registrado.");
-            logger.error("No se pudo guardar el contacto: {}", contacto.getCorreo());
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "No se pudo registrar el evento");
             return "form";
         }
     }
 
-    @GetMapping("/listar")
-    public String listarContactos(Model model) {
-        logger.info("Listando todos los contactos");
+    @GetMapping("/listar") // Mapea peticiones GET a /agenda/listar
+    public String listarEventos(Model model) {
+        logger.info("Listando eventos agrupados por fecha");
 
-        List<Contacto> contactos = agendaService.listar();
+        Map<LocalDate, List<Evento>> eventosAgrupados = agendaService.agruparPorFecha();
 
-        model.addAttribute("contactos", contactos);
-        model.addAttribute("titulo", "Lista de Contactos");
-        model.addAttribute("totalContactos", contactos.size());
-
-        logger.debug("Total de contactos: {}", contactos.size());
+        model.addAttribute("eventosAgrupados", eventosAgrupados);
+        model.addAttribute("titulo", "Agenda de Eventos");
+        model.addAttribute("totalEventos", agendaService.contarEventos());
 
         return "list";
     }
 
-    @GetMapping("/buscar")
-    public String buscarContacto(@RequestParam(value = "nombre", required = false) String nombre,
+    @GetMapping("/buscar") // Mapea peticiones GET a /agenda/buscar
+    public String buscarPorFecha(@RequestParam(value = "fecha", required = false) String fechaStr, // @RequestParam extrae parámetros de URL
                                  Model model) {
 
-        logger.info("Buscando contacto con nombre: {}", nombre);
+        logger.info("Buscando eventos por fecha: {}", fechaStr);
 
-        if (nombre == null || nombre.trim().isEmpty()) {
-            return "redirect:/contactos/listar";
+        if (fechaStr == null || fechaStr.trim().isEmpty()) {
+            return "redirect:/agenda/listar";
         }
 
-        Optional<Contacto> contactoEncontrado = agendaService.buscarPorNombre(nombre);
+        try {
+            LocalDate fecha = LocalDate.parse(fechaStr);
+            List<Evento> eventos = agendaService.buscarPorFecha(fecha);
 
-        if (contactoEncontrado.isPresent()) {
-            List<Contacto> contactos = List.of(contactoEncontrado.get());
-            model.addAttribute("contactos", contactos);
-            model.addAttribute("mensaje", "Contacto encontrado");
-            model.addAttribute("tipoMensaje", "info");
-        } else {
-            model.addAttribute("contactos", List.of());
-            model.addAttribute("error", "No se encontró ningún contacto con ese nombre");
+            model.addAttribute("eventos", eventos);
+            model.addAttribute("fechaBusqueda", fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            model.addAttribute("titulo", "Eventos del " + fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+            if (eventos.isEmpty()) {
+                model.addAttribute("mensaje", "No hay eventos para esta fecha");
+            }
+
+        } catch (Exception e) {
+            logger.error("Error al parsear fecha: {}", fechaStr);
+            model.addAttribute("error", "Fecha inválida");
         }
 
-        model.addAttribute("titulo", "Resultados de Búsqueda");
-        model.addAttribute("busqueda", nombre);
-
-        return "list";
+        return "busqueda";
     }
 
-    @GetMapping
+    @GetMapping // Mapea peticiones GET a /agenda
     public String index() {
-        logger.info("Acceso a ruta raíz de contactos, redirigiendo a listar");
-        return "redirect:/contactos/listar";
+        return "redirect:/agenda/listar";
     }
 }

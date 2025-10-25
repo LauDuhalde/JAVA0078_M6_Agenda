@@ -1,78 +1,66 @@
 package cl.web.service;
 
-import cl.web.modelo.Contacto;
+import cl.web.modelo.Evento;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-/*
-* Clase que implementa la interfaz AgendaService.
-* la anotacion @Service indica que esta clase es un bean de spring.
-*
-* los Override son para sobreescribir los metodos de la interfaz.
- */
-@Service
-    public class AgendaServiceImpl implements AgendaService {
+@Service // Marca esta clase como servicio de Spring (capa de lógica de negocio)
+public class AgendaServiceImpl implements AgendaService {
 
-        private static final Logger logger = LoggerFactory.getLogger(AgendaServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgendaServiceImpl.class);
 
-        private static final List<Contacto> contactos = new ArrayList<>();
+    private static final List<Evento> eventos = new ArrayList<>();
 
-        @Override
-        public boolean registrar(Contacto contacto) {
-            if (contacto == null) {
-                logger.warn("Intento de registrar un contacto nulo");
-                return false;
-            }
-
-            boolean existeCorreo = contactos.stream()
-                    .anyMatch(c -> c.getCorreo().equalsIgnoreCase(contacto.getCorreo()));
-
-            if (existeCorreo) {
-                logger.warn("Intento de registrar contacto con correo duplicado: {}", contacto.getCorreo());
-                return false;
-            }
-
-            contactos.add(contacto);
-            logger.info("Contacto registrado exitosamente: {}", contacto.getNombre());
-            return true;
+    @Override
+    public boolean agregarEvento(Evento evento) {
+        if (evento == null) {
+            logger.warn("Intento de agregar evento nulo");
+            return false;
         }
 
-        @Override
-        public List<Contacto> listar() {
-            logger.debug("Listando {} contactos", contactos.size());
-            return new ArrayList<>(contactos);
+        eventos.add(evento);
+        logger.info("Evento agregado: {}", evento.getTitulo());
+        return true;
+    }
+
+    @Override
+    public List<Evento> listarEventos() {
+        logger.debug("Listando {} eventos", eventos.size());
+        return new ArrayList<>(eventos);
+    }
+
+    @Override
+    public List<Evento> buscarPorFecha(LocalDate fecha) {
+        if (fecha == null) {
+            logger.warn("Búsqueda con fecha nula");
+            return new ArrayList<>();
         }
 
-        @Override
-        public Optional<Contacto> buscarPorNombre(String nombre) {
-            if (nombre == null || nombre.trim().isEmpty()) {
-                logger.warn("Búsqueda con nombre vacío o nulo");
-                return Optional.empty();
-            }
+        logger.debug("Buscando eventos en fecha: {}", fecha);
 
-            logger.debug("Buscando contacto con nombre: {}", nombre);
+        return eventos.stream()
+                .filter(e -> e.getFecha().equals(fecha))
+                .collect(Collectors.toList());
+    }
 
-            Optional<Contacto> resultado = contactos.stream()
-                    .filter(c -> c.getNombre().toLowerCase().contains(nombre.toLowerCase()))
-                    .findFirst();
+    @Override
+    public Map<LocalDate, List<Evento>> agruparPorFecha() {
+        logger.debug("Agrupando eventos por fecha");
 
-            if (resultado.isPresent()) {
-                logger.info("Contacto encontrado: {}", resultado.get().getNombre());
-            } else {
-                logger.info("No se encontró contacto con nombre: {}", nombre);
-            }
+        return eventos.stream()
+                .sorted((e1, e2) -> e1.getFecha().compareTo(e2.getFecha()))
+                .collect(Collectors.groupingBy(Evento::getFecha));
+    }
 
-            return resultado;
-        }
-
-        @Override
-        public int contarContactos() {
-            return contactos.size();
-        }
+    @Override
+    public int contarEventos() {
+        return eventos.size();
+    }
 }
