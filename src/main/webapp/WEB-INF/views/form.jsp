@@ -21,7 +21,7 @@
 
     <form action="guardar" method="post" class="needs-validation" novalidate>
         <div class="mb-3">
-            <label for="titulo" class="form-label">T�tulo:</label>
+            <label for="titulo" class="form-label">Titulo:</label>
             <input type="text" class="form-control" id="titulo" name="titulo" value="${evento.titulo}" required>
         </div>
 
@@ -31,7 +31,7 @@
         </div>
 
         <div class="mb-3">
-            <label for="descripcion" class="form-label">Descripci�n:</label>
+            <label for="descripcion" class="form-label">Descripcion:</label>
             <textarea class="form-control" id="descripcion" name="descripcion" rows="4">${evento.descripcion}</textarea>
         </div>
 
@@ -45,11 +45,11 @@
 
     <!-- Validaciones visuales de longitud -->
     <c:if test="${fn:length(evento.titulo) > 50}">
-        <div class="alert alert-warning mt-3">El t�tulo es demasiado largo (m�x. 50 caracteres).</div>
+        <div class="alert alert-warning mt-3">El titulo es demasiado largo (max. 50 caracteres).</div>
     </c:if>
 
     <c:if test="${fn:length(evento.descripcion) > 200}">
-        <div class="alert alert-warning mt-3">La descripci�n es demasiado larga (m�x. 200 caracteres).</div>
+        <div class="alert alert-warning mt-3">La descripcion es demasiado larga (max. 200 caracteres).</div>
     </c:if>
 </div>
 
