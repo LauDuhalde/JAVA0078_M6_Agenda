@@ -21,29 +21,33 @@ El sistema fue desarrollado utilizando **Spring Boot** bajo el modelo **MVC (Mod
 ## Estructura simplificada del Proyecto
 ```
 JAVA0078_M6_Agenda/
- ├─ src/
- │  ├─ main/
- │  │  ├─ java/cl/web/
- │  │  │  ├─ Java0078M6AgendaApplication.java
- │  │  │  ├─ controller/
- │  │  │  │   ├─ AgendaController.java
- │  │  │  │   └─ HomeController.java
- │  │  │  ├─ exception/
- │  │  │  │   └─ GlobalExceptionHandler.java
- │  │  │  ├─ modelo/
- │  │  │  │   └─ Contacto.java
- │  │  │  └─ service/
- │  │  │      ├─ ContactoService.java
- │  │  │      └─ ContactoServiceImpl.java
- │  │  └─ resources/
- │  │      └─ application.properties
- │  └─ webapp/
- │     └─ WEB-INF/views/
- │          ├─ form.jsp
- │          └─ list.jsp
- └─ test/
-    └─ java/cl/web/
-        └─ ContactoServiceImplTest.java
+├─src/
+│	 ├─ main/
+│	 │   ├─ java/
+│	 │   │   └─ cl/web/
+│	 │   │       ├─ Java0078M6AgendaApplication.java
+│	 │   │       ├─ controller/
+│	 │   │       │   ├─ AgendaController.java
+│	 │   │       │   └─ HomeController.java
+│	 │   │       ├─ exception/
+│	 │   │       │   └─ GlobalExceptionHandler.java
+│	 │   │       ├─ modelo/
+│	 │   │       │   └─ Evento.java
+│	 │   │       └─ service/
+│	 │   │           ├─ AgendaService.java
+│	 │   │           └─ AgendaServiceImpl.java
+│	 │   ├─ resources/
+│	 │   │   └─ application.properties
+│	 │   ├─ webapp/WEB-INF/views/
+│	 │   │   ├─ form.jsp
+│	 │   │   └─ list.jsp
+│	 └─ test/
+│	     └─ java/cl/web/
+│	         └─ ContactoServiceImplTest.java
+├─ despliegue tomcat.png
+├─ pom.xml
+└─ README.md
+
 ```
 
 ## Configuración en `application.properties`
