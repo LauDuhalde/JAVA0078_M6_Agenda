@@ -43,7 +43,7 @@ JAVA0078_M6_Agenda/
 │	 │       └─ list.jsp
 │	 └─ test/
 │	     └─ java/cl/web/
-│	         └─ ContactoServiceImplTest.java
+│	         └─ AgendaServiceImplTest.java
 ├─ despliegue tomcat.png
 ├─ pom.xml
 └─ README.md
