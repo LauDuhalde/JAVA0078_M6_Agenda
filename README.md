@@ -38,9 +38,9 @@ JAVA0078_M6_Agenda/
 │	 │   │           └─ AgendaServiceImpl.java
 │	 │   ├─ resources/
 │	 │   │   └─ application.properties
-│	 │   ├─ webapp/WEB-INF/views/
-│	 │   │   ├─ form.jsp
-│	 │   │   └─ list.jsp
+│	 │   └─ webapp/WEB-INF/views/
+│	 │       ├─ form.jsp
+│	 │       └─ list.jsp
 │	 └─ test/
 │	     └─ java/cl/web/
 │	         └─ ContactoServiceImplTest.java
