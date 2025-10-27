@@ -1,3 +1,4 @@
+// AgendaController.java - LIMPIO SIN @ExceptionHandler
 package cl.web.controller;
 
 import cl.web.modelo.Evento;
@@ -18,16 +19,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-@Controller // Marca esta clase como controlador MVC de Spring
-@RequestMapping(value = {"/agenda", "/"}) // Define la ruta base para todas las peticiones
+@Controller
+@RequestMapping("/agenda")
 public class AgendaController {
 
     private static final Logger logger = LoggerFactory.getLogger(AgendaController.class);
 
-    @Autowired // Inyección automática de dependencias por Spring
+    @Autowired
     private AgendaService agendaService;
 
-    @GetMapping("/nuevo") // Mapea peticiones GET a /agenda/nuevo
+    @GetMapping("/nuevo")
     public String mostrarFormulario(Model model) {
         logger.info("Mostrando formulario de nuevo evento");
         model.addAttribute("evento", new Evento());
@@ -35,17 +36,64 @@ public class AgendaController {
         return "form";
     }
 
-    @PostMapping("/guardar") // Mapea peticiones POST a /agenda/guardar
-    public String guardarEvento(@Valid @ModelAttribute("evento") Evento evento, // @Valid activa validaciones
-                                BindingResult result, // Captura errores de validación
+    @PostMapping("/guardar")
+    public String guardarEvento(@Valid @ModelAttribute("evento") Evento evento,
+                                BindingResult result,
                                 RedirectAttributes redirectAttributes,
                                 Model model) {
 
-        logger.info("Intentando guardar evento: {}", evento.getTitulo());
+        logger.info("Intentando guardar evento: {}", evento != null ? evento.getTitulo() : "null");
 
         if (result.hasErrors()) {
-            logger.warn("Errores de validación al guardar evento");
+            logger.warn("Errores de validación detectados:");
+            result.getAllErrors().forEach(error ->
+                    logger.warn(" - {}", error.getDefaultMessage())
+            );
             model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "Por favor corrija los errores en el formulario");
+            return "form";
+        }
+
+        if (evento == null) {
+            logger.error("Evento recibido es nulo");
+            model.addAttribute("evento", new Evento());
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "Error al procesar el evento. Intente nuevamente.");
+            return "form";
+        }
+
+        if (evento.getFecha() == null) {
+            logger.warn("Fecha del evento es nula");
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "La fecha del evento es obligatoria");
+            return "form";
+        }
+
+        if (evento.getFecha().isBefore(LocalDate.now())) {
+            logger.warn("Intento de registrar evento con fecha pasada: {}", evento.getFecha());
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "No se pueden registrar eventos con fechas pasadas");
+            return "form";
+        }
+
+        if (evento.getTitulo() == null || evento.getTitulo().trim().isEmpty()) {
+            logger.warn("Título vacío detectado");
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "El título del evento es obligatorio");
+            return "form";
+        }
+
+        if (evento.getDescripcion() == null || evento.getDescripcion().trim().isEmpty()) {
+            logger.warn("Descripción vacía detectada");
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "La descripción del evento es obligatoria");
+            return "form";
+        }
+
+        if (evento.getResponsable() == null || evento.getResponsable().trim().isEmpty()) {
+            logger.warn("Responsable vacío detectado");
+            model.addAttribute("titulo", "Registrar Nuevo Evento");
+            model.addAttribute("error", "El responsable del evento es obligatorio");
             return "form";
         }
 
@@ -54,68 +102,74 @@ public class AgendaController {
         if (agregado) {
             redirectAttributes.addFlashAttribute("mensaje", "Evento registrado exitosamente");
             redirectAttributes.addFlashAttribute("tipoMensaje", "success");
-            logger.info("Evento guardado: {}", evento.getTitulo());
+            logger.info("Evento guardado exitosamente: {}", evento.getTitulo());
             return "redirect:/agenda/listar";
         } else {
+            logger.error("El servicio rechazó el evento: {}", evento.getTitulo());
             model.addAttribute("titulo", "Registrar Nuevo Evento");
-            model.addAttribute("error", "No se pudo registrar el evento");
+            model.addAttribute("error", "No se pudo registrar el evento. Intente nuevamente.");
             return "form";
         }
     }
 
-    @GetMapping("/listar") // Mapea peticiones GET a /agenda/listar
+    @GetMapping("/listar")
     public String listarEventos(Model model) {
         logger.info("Listando eventos agrupados por fecha");
 
         Map<LocalDate, List<Evento>> eventosAgrupados = agendaService.agruparPorFecha();
-        // Convertimos las claves LocalDate a String formateado para corregir error en JSP
+
         Map<String, List<Evento>> eventosAgrupadosFormateados = new TreeMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         eventosAgrupados.forEach((fecha, listaEventos) -> {
-            eventosAgrupadosFormateados.put(fecha.format(formatter), listaEventos);
+            if (fecha != null) {
+                eventosAgrupadosFormateados.put(fecha.format(formatter), listaEventos);
+            } else {
+                logger.warn("Fecha nula encontrada en eventos agrupados");
+            }
         });
 
         model.addAttribute("eventosAgrupados", eventosAgrupadosFormateados);
-        //model.addAttribute("eventosAgrupados", eventosAgrupados);
         model.addAttribute("titulo", "Agenda de Eventos");
         model.addAttribute("totalEventos", agendaService.contarEventos());
 
         return "list";
     }
 
-    @GetMapping("/buscar") // Mapea peticiones GET a /agenda/buscar
-    public String buscarPorFecha(@RequestParam(value = "fecha", required = false) String fechaStr, // @RequestParam extrae parámetros de URL
-                                 Model model) {
+    @GetMapping("/buscar")
+    public String buscarPorFecha(@RequestParam(value = "fecha", required = false) String fechaStr,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
 
         logger.info("Buscando eventos por fecha: {}", fechaStr);
 
         if (fechaStr == null || fechaStr.trim().isEmpty()) {
+            logger.warn("Búsqueda sin parámetro de fecha");
+            redirectAttributes.addFlashAttribute("error", "Debe proporcionar una fecha para buscar");
             return "redirect:/agenda/listar";
         }
 
-        try {
-            LocalDate fecha = LocalDate.parse(fechaStr);
-            List<Evento> eventos = agendaService.buscarPorFecha(fecha);
+        LocalDate fecha = LocalDate.parse(fechaStr);
 
-            model.addAttribute("eventos", eventos);
-            model.addAttribute("fechaBusqueda", fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            model.addAttribute("titulo", "Eventos del " + fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        List<Evento> eventos = agendaService.buscarPorFecha(fecha);
 
-            if (eventos.isEmpty()) {
-                model.addAttribute("mensaje", "No hay eventos para esta fecha");
-            }
+        model.addAttribute("eventos", eventos);
+        model.addAttribute("fechaBusqueda", fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        model.addAttribute("titulo", "Eventos del " + fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        } catch (Exception e) {
-            logger.error("Error al parsear fecha: {}", fechaStr);
-            model.addAttribute("error", "Fecha inválida");
+        if (eventos.isEmpty()) {
+            model.addAttribute("mensaje", "No hay eventos registrados para esta fecha");
+            logger.info("No se encontraron eventos para la fecha: {}", fecha);
+        } else {
+            logger.info("Se encontraron {} eventos para la fecha: {}", eventos.size(), fecha);
         }
 
         return "busqueda";
     }
 
-    @GetMapping // Mapea peticiones GET a /agenda
+    @GetMapping
     public String index() {
+        logger.info("Redirigiendo desde raíz a listar");
         return "redirect:/agenda/listar";
     }
 }
